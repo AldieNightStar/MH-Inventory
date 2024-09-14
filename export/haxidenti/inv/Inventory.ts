@@ -16,7 +16,6 @@ namespace haxidenti.inventory {
 		constructor(
 			public name: string,
 			public items: number[],
-			public craftable: boolean = true,
 			public slots: number = 12,
 		) { }
 

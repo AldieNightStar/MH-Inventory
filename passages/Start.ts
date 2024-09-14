@@ -13,10 +13,10 @@ Passage.of("Start", s => {
 			BREAD, BREAD, WATER,
 			WATER, WATER,
 			STICK, STICK, STICK, STICK
-		], true, 10);
+		], 10);
 
 
-	const inv2 = new haxidenti.inventory.Inventory("Another Inventory", [], true, 32);
+	const inv2 = new haxidenti.inventory.Inventory("Another Inventory", [], 32);
 	
 	s.println(inv);
 	s.println(inv2);
