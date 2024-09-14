@@ -1,0 +1,7 @@
+out/**
+src/__ts_build.js
+src/tsconfig.json
+.vscode/**
+.imports/**
+.imports_download/**
+**/*.gen.ts
