@@ -34,6 +34,9 @@ namespace haxidenti.inventory {
 				const oldSlot = this.current.slot;
 				const itemId = this.current.item;
 
+				// Do not allow inventory to transfer to itself
+				if (oldInv === newInv) return false;
+
 				// Confirm that there still item with correct id
 				if (oldInv.items[oldSlot] !== itemId) return false;
 
@@ -46,8 +49,9 @@ namespace haxidenti.inventory {
 				// Add to the new inventory
 				newInv.add(itemId);
 
-				// Update old inventory
+				// Update inventories
 				oldInv.reload();
+				newInv.reload()
 
 				// Reset transfer
 				this.cancelTransfer();

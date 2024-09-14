@@ -98,14 +98,6 @@ namespace haxidenti.inventory {
 			return true;
 		}
 
-		/**
-		 * Do a craft inside this Inventory
-		 */
-		craft(craft: Craft) {
-			craft.craft(this);
-		}
-
-
 
 		/**
 		 * Rendering function
@@ -124,19 +116,6 @@ namespace haxidenti.inventory {
 			this._renderAdditionalSlot(s);
 
 			s.hr();
-			this._renderCrafts(s);
-		}
-
-		private _renderCrafts(s: el.Span) {
-			const crafts = CRAFTS.filter(c => c.fits(this));
-			if (crafts.length > 0) {
-				s.printCenter("⚒️Crafting⚒️");
-				s.hr();
-				for (let craft of crafts) {
-					s.print(craft);
-				}
-				s.hr();
-			}
 		}
 
 		private _renderItems(s: el.Span) {
@@ -157,9 +136,7 @@ namespace haxidenti.inventory {
 		private _renderAdditionalSlot(s: el.Span) {
 			if (this.len() >= this.slots) return;
 			s.button("➕...", () => {
-				if (Transfer.doTransfer(this)) {
-					this.reload();
-				}
+				Transfer.doTransfer(this);
 			})
 		}
 
