@@ -37,7 +37,11 @@ namespace haxidenti.inventory.ui {
 			// Render button
 			const isSelected = this.selectedSlot === slot.slotId;
 			this._slotButton(s, name, () => {
-				this.selectedSlot = slot.slotId;
+				if (this.selectedSlot === slot.slotId) {
+					this.selectedSlot = -1;
+				} else {
+					this.selectedSlot = slot.slotId;
+				}
 			}, isSelected);
 		}
 
@@ -98,7 +102,7 @@ namespace haxidenti.inventory.ui {
 				})
 			}
 
-			s.rebutton("➕Re-Add", () => {
+			s.rebutton("➕Stack", () => {
 				if (!isValidOperation()) return;
 				slot.setNothing();
 				if (!this.inv.addItem(slotItem, slotCount)) {
