@@ -99,7 +99,7 @@ namespace haxidenti.inventory {
 			if (this.isNothing() || this.getCount() < 1) return false;
 
 			// Slot 2 myst have exact type or be empty
-			if (!slot2.isNothing() || slot2.getId() !== this.getId()) return false;
+			if (!(slot2.isNothing() || slot2.getId() === this.getId())) return false;
 
 			// Slot 2 have to have free space for Current Slot items
 			if (slot2.getFree() < this.getCount()) return false;

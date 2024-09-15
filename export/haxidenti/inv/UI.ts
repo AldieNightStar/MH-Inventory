@@ -4,6 +4,8 @@ namespace haxidenti.inventory.ui {
 		private selectedSlot = -1;
 
 		render(s: el.Span): Void {
+			s.reloadTime = 0;
+
 			s.hr();
 			this._renderSlots(s);
 			s.hr();
@@ -27,16 +29,30 @@ namespace haxidenti.inventory.ui {
 			if (count > 1) name += (" [x" + count + "]");
 
 			// Render button
-			const button = s.button(name, () => {
-				// TODO
-			})
+			const button = s.rebutton(name, () => {
+				this.selectedSlot = slot.slotId;
+			});
+
 			if (this.selectedSlot === slot.slotId) {
 				button.style.backgroundColor = "grey";
 			}
 		}
 
 		private _renderEmptySlot(s: el.Span, slot: SlotInfo) {
-			s.button("...", () => {})
+			const button = s.rebutton("...", () => {
+				// Try to move item from previous slot
+				if (this.selectedSlot >= 0) {
+					const oldSlot = this.inv.slot(this.selectedSlot);
+					console.log(oldSlot)
+					console.log(oldSlot?.transferTo(slot));
+				}
+				// Reset slot
+				this.selectedSlot = -1;
+			})
+
+			if (this.selectedSlot === slot.slotId) {
+				button.style.backgroundColor = "grey";
+			}
 		}
 
 	}
