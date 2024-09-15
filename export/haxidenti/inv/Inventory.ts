@@ -196,5 +196,12 @@ namespace haxidenti.inventory {
 			return new ui.InventoryUI(this, transferInventory);
 		}
 
+		/**
+		 * Returns hash number of that inventory to track is it changed or not
+		 */
+		hash(): number {
+			return Util.hash(Engine.pack(this));
+		}
+
 	}
 }

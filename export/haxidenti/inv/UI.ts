@@ -1,11 +1,16 @@
 namespace haxidenti.inventory.ui {
-	export class InventoryUI implements el.Element {
+
+	export class InventoryUI implements el.Element, el.Reloadable {
 		constructor(
 			public inv: Inventory,
 			public inv2?: Inventory
-		) { }
+		) {
+			this.invHash = inv.hash();
+		}
+
 		private selectedSlot = -1;
 		private locked = false;
+		private invHash = 0;
 
 		lock(): this {
 			this.locked = true;
@@ -14,6 +19,15 @@ namespace haxidenti.inventory.ui {
 
 		render(s: el.Span): Void {
 			s.reloadTime = 0;
+
+			// When hash is changed, then reload this element
+			s.interval(1000, () => {
+				const newHash = this.inv.hash();
+				if (this.invHash !== newHash) {
+					this.invHash = newHash;
+					s.reload();
+				}
+			})
 
 			s.hr();
 			this._renderSlots(s);
@@ -139,5 +153,7 @@ namespace haxidenti.inventory.ui {
 		private _getSelectedSlot(): SlotInfo | null {
 			return this.inv.slot(this.selectedSlot);
 		}
+
+		reload() {}
 	}
 }
