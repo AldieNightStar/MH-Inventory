@@ -6,15 +6,13 @@ Passage.of("Start", s => {
 	const ROCK = haxidenti.inventory.registerItem(3, "🪨Rock", 16);
 
 	const inv1 = new haxidenti.inventory.Inventory(32);
-	console.log("Add BREAD", inv1.addItem(BREAD, 32));
-	console.log("Add BRANCH", inv1.addItem(BRANCH, 32));
-	console.log("Add ROCK", inv1.addItem(ROCK, 32));
+	console.log("Add BREAD", inv1.addItem(BREAD, 7));
+	// console.log("Add BRANCH", inv1.addItem(BRANCH, 32));
+	// console.log("Add ROCK", inv1.addItem(ROCK, 32));
 	
 	const inv2 = new haxidenti.inventory.Inventory(32);
 
-	console.log(Engine.pack(inv1));
-
-	s.print(inv1.ui());
-	s.print(inv2.ui());
+	s.print(inv1.ui(inv2));
+	s.print(inv2.ui(inv1));
 
 });

@@ -8,12 +8,18 @@ namespace haxidenti.inventory {
 		) { }
 
 		getId() {
-			const [id] = this._get();
+			const raw = this._get();
+			if (isNull(raw)) return 0;
+
+			const [id] = raw;
 			return id;
 		}
 
 		getCount() {
-			const [, count] = this._get();
+			const raw = this._get();
+			if (isNull(raw)) return 0;
+
+			const [, count] = raw;
 			return count;
 		}
 
@@ -189,6 +195,14 @@ namespace haxidenti.inventory {
 			return count;
 		}
 
+		addItemStack(itemId: number, count: number): boolean {
+			const freeSlot = this.getFreeSlots()[0];
+			if (isNull(freeSlot)) return false;
+			freeSlot.setId(itemId);
+			freeSlot.setCount(count);
+			return true;
+		}
+
 		addItem(itemId: number, count: number): boolean {
 			if (this.getFreeCountForItem(itemId) < count) return false;
 			const itemMaxStack = getRegistryItem(itemId)?.maxStack || DEFAULT_ITEM_STACK;
@@ -263,8 +277,8 @@ namespace haxidenti.inventory {
 			return inventory2.addItem(itemId, count);
 		}
 
-		ui() {
-			return new ui.InventoryUI(this);
+		ui(transferInventory?: Inventory) {
+			return new ui.InventoryUI(this, transferInventory);
 		}
 
 	}

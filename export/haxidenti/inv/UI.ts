@@ -1,6 +1,9 @@
 namespace haxidenti.inventory.ui {
 	export class InventoryUI implements el.Element {
-		constructor(public inv: Inventory) { }
+		constructor(
+			public inv: Inventory,
+			public inv2?: Inventory
+		) { }
 		private selectedSlot = -1;
 
 		render(s: el.Span): Void {
@@ -8,6 +11,9 @@ namespace haxidenti.inventory.ui {
 
 			s.hr();
 			this._renderSlots(s);
+
+			s.br();
+			this._renderOptionsBar(s);
 			s.hr();
 		}
 
@@ -36,7 +42,7 @@ namespace haxidenti.inventory.ui {
 		}
 
 		private _renderEmptySlot(s: el.Span, slot: SlotInfo) {
-			const isSelected = this.selectedSlot === slot.getId();
+			const isSelected = this.selectedSlot === slot.slotId;
 			this._slotButton(s, "...", () => {
 				// Try to move item from previous slot
 				if (this.selectedSlot >= 0) {
@@ -57,5 +63,52 @@ namespace haxidenti.inventory.ui {
 			return b as HTMLButtonElement;
 		}
 
+		private _renderOptionsBar(s: el.Span) {
+			const slot = this._getSelectedSlot();
+			if (isNull(slot)) return;
+			if (slot.isNothing()) return;
+
+			const slotCount: number = slot.getCount();
+			const slotItem: number = slot.getId();
+
+			if (slotCount > 1) {
+				s.rebutton("⚔️Split x2", () => {
+					const newCount = Math.floor(slotCount / 2);
+					const reminder = slotCount % 2
+					const ok = this.inv.addItemStack(slotItem, newCount);
+					console.log(newCount + reminder);
+					if (ok) slot.setCount(newCount + reminder);
+				})
+				s.rebutton("1️⃣Take One", () => {
+					slot.setCount(slotCount - 1);
+					if (!this.inv.addItemStack(slotItem, 1)) {
+						// Fallback in case something went wrong
+						slot.setCount(slotCount);
+					}
+				})
+			}
+
+			s.rebutton("➕Re-Add", () => {
+				slot.setNothing();
+				if (!this.inv.addItem(slotItem, slotCount)) {
+					// Fallback in case something went wrong
+					slot.setId(slotItem);
+					slot.setCount(slotCount);
+				}
+			});
+
+			// If second inventory present then draw transfer button
+			if (!isNull(this.inv2)) {
+				s.rebutton("⏭️Transfer", () => {
+					if (this.inv2!!.addItem(slotItem, slotCount)) {
+						slot.setNothing();
+					}
+				})
+			}
+		}
+
+		private _getSelectedSlot(): SlotInfo | null {
+			return this.inv.slot(this.selectedSlot);
+		}
 	}
 }
