@@ -1,23 +1,17 @@
 // This is your first passage
 Passage.of("Start", s => {
-	const BREAD = 1;
-	const WATER = 2;
-	const STICK = 3;
 
-	haxidenti.inventory.ITEMS[BREAD] = "🥖Bread"
-	haxidenti.inventory.ITEMS[WATER] = "💧Bottle of Water"
-	haxidenti.inventory.ITEMS[STICK] = "🌿Wooden Stick"
+	const BREAD = haxidenti.inventory.registerItem(1, "🥖Bread", 4);
+	const BRANCH = haxidenti.inventory.registerItem(2, "🌿Branch", 4);
+	const ROCK = haxidenti.inventory.registerItem(3, "🪨Rock", 16);
 
-	const inv = new haxidenti.inventory.Inventory("Testing Inventory",
-		[
-			BREAD, BREAD, WATER,
-			WATER, WATER,
-			STICK, STICK, STICK, STICK
-		], 10);
+	const inv1 = new haxidenti.inventory.Inventory(32);
+	console.log("Add BREAD", inv1.addItem(BREAD, 800));
+	console.log("Add BRANCH", inv1.addItem(BRANCH, 250));
+	console.log("Add ROCK", inv1.addItem(ROCK, 32));
+	const inv2 = new haxidenti.inventory.Inventory(32);
 
+	s.print(inv1.ui());
+	s.print(inv2.ui());
 
-	const inv2 = new haxidenti.inventory.Inventory("Another Inventory", [], 32);
-	
-	s.println(inv);
-	s.println(inv2);
 });

@@ -1,149 +1,263 @@
 namespace haxidenti.inventory {
 
-	/**
-	 * Register item numbers to names here. So it will be displayed correctly
-	 */
-	export const ITEMS: { [k: number]: string } = {}
-
-	/**
-	 * Set custom item name when it's unknown to the Inventory system
-	 */
-	export let UNKNOWN_ITEM = "💀Unknown Item";
-
-
-	@Engine.dto("haxidenti.Inventory")
-	export class Inventory implements el.Element, el.Reloadable {
+	export class SlotInfo {
 		constructor(
-			public name: string,
-			public items: number[],
-			public slots: number = 12,
+			public slotId: number,
+			private _get: () => [number, number],
+			private _update: (id: number, count: number) => void
 		) { }
 
-		/**
-		 * Get count of all items inside
-		 */
-		len(): number {
-			return this.items.length;
+		getId() {
+			const [id] = this._get();
+			return id;
 		}
 
-		/**
-		 * Add new item. Returns true if was added ok
-		 */
-		add(item: number): boolean {
-			if (this.items.length >= this.slots) return false;
-			this.items.push(item);
-			return true;
-		}
-
-		/**
-		 * Get amount of exact item type
-		 */
-		count(item: number): number {
-			let count = 0;
-			this.items.forEach(invItem => {
-				if (item === invItem) {
-					count += 1;
-				}
-			});
+		getCount() {
+			const [, count] = this._get();
 			return count;
 		}
 
-		/**
-		 * Will remove items only if there minimum amount.
-		 * Otherwise will return false and will not remove anything
-		 */
-		removeFew(item: number, count: number) {
-			if (this.count(item) >= count) {
-				for (let i = 0; i < count; i++) {
-					this.remove(item);
-				}
-				return true;
-			}
-			return false;
+		getRegistryInfo(): ItemInfo | null {
+			const id = this.getId();
+			if (id < 1) return null;
+
+			return getRegistryItem(id) || null;
 		}
 
-		/**
-		 * Remove single item and return true if there was it, or false if not
-		 */
-		remove(item: number): boolean {
-			let id = -1;
-			for (let i = 0; i < this.items.length; i++) {
-				const invItem = this.items[i];
-				if (invItem === item) {
-					id = i;
-					break
-				}
-			}
-			if (id !== -1) {
-				this.items.splice(id, 1);
-			}
-
-			return id !== -1;
+		getName(): string | null {
+			const info = this.getRegistryInfo();
+			if (isNull(info)) return null;
+			return info.name;
 		}
 
-		/**
-		 * Send item to another inventory
-		 */
-		transfer(item: number, toInv: Inventory) {
-			if (this === toInv) return false;
+		getTags(): string[] {
+			const info = this.getRegistryInfo();
+			if (isNull(info)) return [];
+			return info.tags;
+		}
 
-			const hasItem = this.count(item) > 0
-			if (!hasItem) return false;
+		getMax(): number {
+			// For Nothing
+			if (this.getId() === 0) return DEFAULT_ITEM_STACK;
 
-			const addedOk = toInv.add(item);
-			if (!addedOk) return false;
+			const info = this.getRegistryInfo();
+			if (isNull(info)) return 0;
+			return info.maxStack;
+		}
 
-			this.remove(item);
+		getFree(): number {
+			const max = this.getMax();
+			const free = max - this.getCount();
+			// If less than 0 then return 0 and if more than max then return max
+			if (free > 0) return free;
+			if (free > max) return max;
+			return 0;
+		}
+
+		isNothing(): boolean {
+			return this.getId() === 0 || this.getCount() < 1;
+		}
+
+		setCount(count: number) {
+			const max = this.getMax();
+			let id = this.getId();
+			if (count < 0) {
+				count = 0;
+				id = 0;
+			}
+			if (count > max) count = max;
+			this._update(id, count);
+		}
+
+		setId(n: number) {
+			if (n < 0) n = 0;
+			this._update(n, this.getCount())
+		}
+
+		addCount(n: number): boolean {
+			const newCount = this.getCount() + n;
+			if (newCount > this.getMax()) return false;
+			this.setCount(newCount);
 			return true;
 		}
 
-
-		/**
-		 * Rendering function
-		 */
-		render(s: el.Span): Void {
-			s.reloadTime = 0;
-
-			s.hr();
-			s.printCenter("💼" + this.name);
-			s.hr();
-
-			// Render items
-			this._renderItems(s);
-
-			// Render additional slot
-			this._renderAdditionalSlot(s);
-
-			s.hr();
+		setNothing() {
+			this._update(0, 0);
 		}
 
-		private _renderItems(s: el.Span) {
-			for (let i = 0; i < this.items.length; i++) {
-				const item = this.items[i];
+		transferTo(slot2: SlotInfo): boolean {
+			// Do not allow to send items to itself
+			if (this === slot2) return false;
 
-				// Calculate name
-				let itemName = ITEMS[item];
-				if (isNull(itemName)) itemName = UNKNOWN_ITEM;
-				
-				// Print button
-				s.button(itemName, () => {
-					Transfer.setTransfer(this, i, item);
-				});
+			// Current Slot has have something
+			if (this.isNothing() || this.getCount() < 1) return false;
+
+			// Slot 2 myst have exact type or be empty
+			if (!slot2.isNothing() || slot2.getId() !== this.getId()) return false;
+
+			// Slot 2 have to have free space for Current Slot items
+			if (slot2.getFree() < this.getCount()) return false;
+
+			// Make transition
+			slot2.addCount(this.getCount())
+			slot2.setId(this.getId());
+			this.setNothing();
+
+			return true;
+		}
+	}
+
+	@Engine.dto("haxidenti.Inventory")
+	export class Inventory {
+		constructor(public maximum: number = 32) {
+			this.slots = [];
+			for (let i = 0; i < this.maximum; i++) {
+				this.slots.push([0, 0]);
 			}
 		}
 
-		private _renderAdditionalSlot(s: el.Span) {
-			if (this.len() >= this.slots) return;
-			s.button("➕...", () => {
-				Transfer.doTransfer(this);
-			})
+		private slots: [number, number][] = [];
+
+		isSlotAvailable(n: number): boolean {
+			return n > 0 || n < this.maximum;
 		}
 
-		/**
-		 * Just for reloading
-		 */
-		reload() {}
+		allSlots(): SlotInfo[] {
+			const slots: SlotInfo[] = [];
+			for (let i = 0; i < this.maximum; i++) {
+				const slot = this.slot(i);
+				if (isNull(slot)) continue;
+				slots.push(slot);
+			}
+			return slots;
+		}
+
+		slot(slotId: number): SlotInfo | null {
+			if (!this.isSlotAvailable(slotId)) return null;
+			return new SlotInfo(
+				slotId,
+				() => this.slots[slotId],
+				(itemId, cnt) => { this.slots[slotId] = [itemId, cnt] }
+			);
+		}
+
+		getFreeSlots(forItemId: number = 0): SlotInfo[] {
+			const freeSlots: SlotInfo[] = [];
+
+			for (let i = 0; i < this.maximum; i++) {
+				const slot = this.slot(i);
+
+				// Skip null slots
+				if (isNull(slot)) continue;
+
+				if (forItemId > 0) {
+					if (slot.getId() === forItemId && slot.getFree() > 0) {
+						freeSlots.push(slot);
+						continue;
+					}
+				}
+
+				if (slot.isNothing()) {
+					freeSlots.push(slot);
+					continue;
+				}
+			}
+
+			return freeSlots;
+		}
+
+		getItemSlots(itemId: number): SlotInfo[] {
+			const slots: SlotInfo[] = [];
+			for (let i = 0; i < this.maximum; i++) {
+				const slot = this.slot(i);
+				if (isNull(slot) || slot?.isNothing()) continue;
+				if (slot.getId() === itemId) slots.push(slot);
+			}
+			return slots;
+		}
+
+		getFreeCountForItem(itemId: number): number {
+			const slots = this.getFreeSlots(itemId);
+			let count = 0;
+			slots.forEach(s => count += s.getFree());
+			return count;
+		}
+
+		addItem(itemId: number, count: number): boolean {
+			if (this.getFreeCountForItem(itemId) < count) return false;
+			for (let slot of this.getFreeSlots(itemId)) {
+				// Stop if no more items
+				if (count < 1) break;
+
+				// Get free count for current slot
+				const free = slot.getFree();
+
+				if (free < count) {
+					// If enough space to put ALL count,
+					// Then put it and end up
+					count -= free;
+					slot.addCount(free);
+					slot.setId(itemId);
+				} else {
+					// If not enough space to put ALL count,
+					// Then put what is free, and move next
+					slot.addCount(count);
+					slot.setId(itemId);
+					count -= free;
+					break;
+				}
+			}
+			return true;
+		}
+
+		countItem(itemId: number): number {
+			let count = 0;
+			for (let i = 0; i < this.maximum; i++) {
+				const slot = this.slot(i);
+				if (isNull(slot) || slot?.isNothing()) continue;
+				if (slot.getId() === itemId) {
+					count += slot.getCount();
+				}
+			}
+			return count;
+		}
+
+		takeItem(itemId: number, count: number): boolean {
+			if (this.countItem(itemId) < count) return false;
+			for (let slot of this.getItemSlots(itemId)) {
+				if (count < 1) break;
+				let slotCount = slot.getCount();
+				if (slotCount < count) {
+					// If this count of items in this slot not enough,
+					// Then just remove slot item and substract count
+					count -= slotCount;
+					slot.setNothing();
+				} else {
+					// If this count of items is enough,
+					// Then decrease count and we done
+					slotCount -= count;
+					slot.setCount(slotCount);
+					break
+				}
+			}
+			return true;
+		}
+
+		transfer(itemId: number, count: number, inventory2: Inventory): boolean {
+			// Check if second inventory has enough space
+			if (inventory2.getFreeCountForItem(itemId) <= count) return false;
+
+			// Take items from this inventory
+			const taken = this.takeItem(itemId, count);
+			if (!taken) return false;
+
+			// Move them to another inventory
+			return inventory2.addItem(itemId, count);
+		}
+
+		ui() {
+			return new ui.InventoryUI(this);
+		}
 
 	}
-
 }
