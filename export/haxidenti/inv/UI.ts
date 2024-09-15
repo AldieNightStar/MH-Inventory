@@ -5,6 +5,12 @@ namespace haxidenti.inventory.ui {
 			public inv2?: Inventory
 		) { }
 		private selectedSlot = -1;
+		private locked = false;
+
+		lock(): this {
+			this.locked = true;
+			return this
+		}
 
 		render(s: el.Span): Void {
 			s.reloadTime = 0;
@@ -12,8 +18,11 @@ namespace haxidenti.inventory.ui {
 			s.hr();
 			this._renderSlots(s);
 
-			s.br();
-			this._renderOptionsBar(s);
+			if (!this.locked) {
+				s.br();
+				this._renderOptionsBar(s);
+			}
+
 			s.hr();
 		}
 
@@ -59,7 +68,11 @@ namespace haxidenti.inventory.ui {
 		}
 
 		private _slotButton(s: el.Span, caption: string, cb: TaskFunc, isGrey: boolean = false): HTMLButtonElement {
-			const b = s.rebutton(caption, cb);
+			const b = s.rebutton(caption, () => {
+				if (!this.locked) {
+					cb();
+				}
+			});
 			b.className = "haxidenti_inv_slot";
 			if (isGrey) {
 				b.style.backgroundColor = "grey";
