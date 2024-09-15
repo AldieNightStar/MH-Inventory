@@ -1,6 +1,6 @@
 namespace haxidenti.inventory.ui {
 	export class InventoryUI implements el.Element {
-		constructor(public inv: Inventory) {}
+		constructor(public inv: Inventory) { }
 		private selectedSlot = -1;
 
 		render(s: el.Span): Void {
@@ -20,7 +20,7 @@ namespace haxidenti.inventory.ui {
 		private _renderSlot(s: el.Span, slot: SlotInfo) {
 			// If slot is empty
 			if (slot.isNothing()) return this._renderEmptySlot(s, slot);
-			
+
 			// Get name
 			let name = slot.getName() || "???";
 
@@ -29,30 +29,32 @@ namespace haxidenti.inventory.ui {
 			if (count > 1) name += (" [x" + count + "]");
 
 			// Render button
-			const button = s.rebutton(name, () => {
+			const isSelected = this.selectedSlot === slot.slotId;
+			this._slotButton(s, name, () => {
 				this.selectedSlot = slot.slotId;
-			});
-
-			if (this.selectedSlot === slot.slotId) {
-				button.style.backgroundColor = "grey";
-			}
+			}, isSelected);
 		}
 
 		private _renderEmptySlot(s: el.Span, slot: SlotInfo) {
-			const button = s.rebutton("...", () => {
+			const isSelected = this.selectedSlot === slot.getId();
+			this._slotButton(s, "...", () => {
 				// Try to move item from previous slot
 				if (this.selectedSlot >= 0) {
 					const oldSlot = this.inv.slot(this.selectedSlot);
-					console.log(oldSlot)
-					console.log(oldSlot?.transferTo(slot));
+					oldSlot?.transferTo(slot)
 				}
 				// Reset slot
 				this.selectedSlot = -1;
-			})
+			}, isSelected)
+		}
 
-			if (this.selectedSlot === slot.slotId) {
-				button.style.backgroundColor = "grey";
+		private _slotButton(s: el.Span, caption: string, cb: TaskFunc, isGrey: boolean = false): HTMLButtonElement {
+			const b = s.rebutton(caption, cb);
+			b.className = "haxidenti_inv_slot";
+			if (isGrey) {
+				b.style.backgroundColor = "grey";
 			}
+			return b as HTMLButtonElement;
 		}
 
 	}

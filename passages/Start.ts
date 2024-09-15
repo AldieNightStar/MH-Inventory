@@ -12,6 +12,8 @@ Passage.of("Start", s => {
 	
 	const inv2 = new haxidenti.inventory.Inventory(32);
 
+	console.log(Engine.pack(inv1));
+
 	s.print(inv1.ui());
 	s.print(inv2.ui());
 
