@@ -69,9 +69,15 @@ namespace haxidenti.inventory {
 			this._update(id, count);
 		}
 
-		setId(n: number) {
-			if (n < 0) n = 0;
-			this._update(n, this.getCount())
+		setId(itemId: number) {
+			let count = this.getCount();
+			const max = this.getMax();
+			if (itemId < 1) {
+				itemId = 0;
+				count = 0;
+			}
+			if (count > max) count = max;
+			this._update(itemId, count)
 		}
 
 		addCount(n: number): boolean {
@@ -185,12 +191,14 @@ namespace haxidenti.inventory {
 
 		addItem(itemId: number, count: number): boolean {
 			if (this.getFreeCountForItem(itemId) < count) return false;
+			const itemMaxStack = getRegistryItem(itemId)?.maxStack || DEFAULT_ITEM_STACK;
 			for (let slot of this.getFreeSlots(itemId)) {
 				// Stop if no more items
 				if (count < 1) break;
 
 				// Get free count for current slot
-				const free = slot.getFree();
+				let free = slot.getFree();
+				if (free > itemMaxStack) free = itemMaxStack;
 
 				if (free < count) {
 					// If enough space to put ALL count,
