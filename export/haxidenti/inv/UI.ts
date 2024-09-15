@@ -71,8 +71,17 @@ namespace haxidenti.inventory.ui {
 			const slotCount: number = slot.getCount();
 			const slotItem: number = slot.getId();
 
+			// Protect values from dupes due to change slot value in another place
+			function isValidOperation() {
+				if (isNull(slot)) return;
+				if (slot.getCount() != slotCount) return false;
+				if (slot.getId() != slotItem) return false;
+				return true;
+			}
+
 			if (slotCount > 1) {
 				s.rebutton("⚔️Split x2", () => {
+					if (!isValidOperation()) return;
 					const newCount = Math.floor(slotCount / 2);
 					const reminder = slotCount % 2
 					const ok = this.inv.addItemStack(slotItem, newCount);
@@ -80,6 +89,7 @@ namespace haxidenti.inventory.ui {
 					if (ok) slot.setCount(newCount + reminder);
 				})
 				s.rebutton("1️⃣Take One", () => {
+					if (!isValidOperation()) return;
 					slot.setCount(slotCount - 1);
 					if (!this.inv.addItemStack(slotItem, 1)) {
 						// Fallback in case something went wrong
@@ -89,6 +99,7 @@ namespace haxidenti.inventory.ui {
 			}
 
 			s.rebutton("➕Re-Add", () => {
+				if (!isValidOperation()) return;
 				slot.setNothing();
 				if (!this.inv.addItem(slotItem, slotCount)) {
 					// Fallback in case something went wrong
@@ -100,6 +111,7 @@ namespace haxidenti.inventory.ui {
 			// If second inventory present then draw transfer button
 			if (!isNull(this.inv2)) {
 				s.rebutton("⏭️Transfer", () => {
+					if (!isValidOperation()) return;
 					if (this.inv2!!.addItem(slotItem, slotCount)) {
 						slot.setNothing();
 					}
