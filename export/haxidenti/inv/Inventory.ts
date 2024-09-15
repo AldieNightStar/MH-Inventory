@@ -7,6 +7,9 @@ namespace haxidenti.inventory {
 			private _update: (id: number, count: number) => void
 		) { }
 
+		/**
+		 * Get item id
+		 */
 		getId() {
 			const raw = this._get();
 			if (isNull(raw)) return 0;
@@ -15,6 +18,9 @@ namespace haxidenti.inventory {
 			return id;
 		}
 
+		/**
+		 * Get item stack count
+		 */
 		getCount() {
 			const raw = this._get();
 			if (isNull(raw)) return 0;
@@ -23,6 +29,9 @@ namespace haxidenti.inventory {
 			return count;
 		}
 
+		/**
+		 * Get information about that item or null, if unknown
+		 */
 		getRegistryInfo(): ItemInfo | null {
 			const id = this.getId();
 			if (id < 1) return null;
@@ -30,18 +39,27 @@ namespace haxidenti.inventory {
 			return getRegistryItem(id) || null;
 		}
 
+		/**
+		 * Get name of that item or null, if unknown
+		 */
 		getName(): string | null {
 			const info = this.getRegistryInfo();
 			if (isNull(info)) return null;
 			return info.name;
 		}
 
+		/**
+		 * Get tags of that item
+		 */
 		getTags(): string[] {
 			const info = this.getRegistryInfo();
 			if (isNull(info)) return [];
 			return info.tags;
 		}
 
+		/**
+		 * Get maximum stack of that item
+		 */
 		getMax(): number {
 			// For Nothing
 			if (this.getId() === 0) return DEFAULT_ITEM_STACK;
@@ -51,6 +69,9 @@ namespace haxidenti.inventory {
 			return info.maxStack;
 		}
 
+		/**
+		 * Get free space for new items in this stack
+		 */
 		getFree(): number {
 			const max = this.getMax();
 			const free = max - this.getCount();
@@ -60,10 +81,16 @@ namespace haxidenti.inventory {
 			return 0;
 		}
 
+		/**
+		 * Checks whether this slot is pointing to nothing-item
+		 */
 		isNothing(): boolean {
 			return this.getId() === 0 || this.getCount() < 1;
 		}
 
+		/**
+		 * Set stack count by hands
+		 */
 		setCount(count: number) {
 			const max = this.getMax();
 			let id = this.getId();
@@ -75,6 +102,9 @@ namespace haxidenti.inventory {
 			this._update(id, count);
 		}
 
+		/**
+		 * Change itemId
+		 */
 		setId(itemId: number) {
 			let count = this.getCount();
 			const max = this.getMax();
@@ -86,6 +116,9 @@ namespace haxidenti.inventory {
 			this._update(itemId, count)
 		}
 
+		/**
+		 * Add some amount to that stack. Will return false if too many
+		 */
 		addCount(n: number): boolean {
 			const newCount = this.getCount() + n;
 			if (newCount > this.getMax()) return false;
@@ -93,10 +126,16 @@ namespace haxidenti.inventory {
 			return true;
 		}
 
+		/**
+		 * Erases content of that slot
+		 */
 		setNothing() {
 			this._update(0, 0);
 		}
 
+		/**
+		 * Tries to move data inside that slot to another. Will return false if can't or slot2 is not free
+		 */
 		transferTo(slot2: SlotInfo): boolean {
 			// Do not allow to send items to itself
 			if (this === slot2) return false;
@@ -130,10 +169,13 @@ namespace haxidenti.inventory {
 
 		private slots: [number, number][] = [];
 
-		isSlotAvailable(n: number): boolean {
+		private isSlotAvailable(n: number): boolean {
 			return n > 0 || n < this.maximum;
 		}
 
+		/**
+		 * Get all slots as list of object. (Heavy operation)
+		 */
 		allSlots(): SlotInfo[] {
 			const slots: SlotInfo[] = [];
 			for (let i = 0; i < this.maximum; i++) {
@@ -144,6 +186,9 @@ namespace haxidenti.inventory {
 			return slots;
 		}
 
+		/**
+		 * Get specific slot from that inventory
+		 */
 		slot(slotId: number): SlotInfo | null {
 			if (!this.isSlotAvailable(slotId)) return null;
 			return new SlotInfo(
@@ -153,6 +198,10 @@ namespace haxidenti.inventory {
 			);
 		}
 
+		/**
+		 * Get free slots that could be used for new items.
+		 * If `forItemId` is specified, then it will also include slots with that item id (That have some free space)
+		 */
 		getFreeSlots(forItemId: number = 0): SlotInfo[] {
 			const freeSlots: SlotInfo[] = [];
 
@@ -178,6 +227,9 @@ namespace haxidenti.inventory {
 			return freeSlots;
 		}
 
+		/**
+		 * Get all slots that is used for that item id
+		 */
 		getItemSlots(itemId: number): SlotInfo[] {
 			const slots: SlotInfo[] = [];
 			for (let i = 0; i < this.maximum; i++) {
@@ -188,6 +240,9 @@ namespace haxidenti.inventory {
 			return slots;
 		}
 
+		/**
+		 * Get how many items of that id could be added to this inventory
+		 */
 		getFreeCountForItem(itemId: number): number {
 			const slots = this.getFreeSlots(itemId);
 			let count = 0;
@@ -195,14 +250,9 @@ namespace haxidenti.inventory {
 			return count;
 		}
 
-		addItemStack(itemId: number, count: number): boolean {
-			const freeSlot = this.getFreeSlots()[0];
-			if (isNull(freeSlot)) return false;
-			freeSlot.setId(itemId);
-			freeSlot.setCount(count);
-			return true;
-		}
-
+		/**
+		 * Add new item or stack new item to existing ones
+		 */
 		addItem(itemId: number, count: number): boolean {
 			if (this.getFreeCountForItem(itemId) < count) return false;
 			const itemMaxStack = getRegistryItem(itemId)?.maxStack || DEFAULT_ITEM_STACK;
@@ -232,6 +282,20 @@ namespace haxidenti.inventory {
 			return true;
 		}
 
+		/**
+		 * Add new item, but as a new stack, without stacking to existing ones
+		 */
+		addItemStack(itemId: number, count: number): boolean {
+			const freeSlot = this.getFreeSlots()[0];
+			if (isNull(freeSlot)) return false;
+			freeSlot.setId(itemId);
+			freeSlot.setCount(count);
+			return true;
+		}
+
+		/**
+		 * Count how many items does this inventory has for item id
+		 */
 		countItem(itemId: number): number {
 			let count = 0;
 			for (let i = 0; i < this.maximum; i++) {
@@ -244,6 +308,9 @@ namespace haxidenti.inventory {
 			return count;
 		}
 
+		/**
+		 * Remove items or return false if can't. Will not touch if not enough count. Good for stores
+		 */
 		takeItem(itemId: number, count: number): boolean {
 			if (this.countItem(itemId) < count) return false;
 			for (let slot of this.getItemSlots(itemId)) {
@@ -265,6 +332,9 @@ namespace haxidenti.inventory {
 			return true;
 		}
 
+		/**
+		 * Send items from one inventory to another
+		 */
 		transfer(itemId: number, count: number, inventory2: Inventory): boolean {
 			// Check if second inventory has enough space
 			if (inventory2.getFreeCountForItem(itemId) <= count) return false;
@@ -277,6 +347,9 @@ namespace haxidenti.inventory {
 			return inventory2.addItem(itemId, count);
 		}
 
+		/**
+		 * Creates UI version of this Inventory, that can be printed
+		 */
 		ui(transferInventory?: Inventory) {
 			return new ui.InventoryUI(this, transferInventory);
 		}
