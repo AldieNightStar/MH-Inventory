@@ -76,10 +76,12 @@ inv.item(COIN).hasTag("money")
 ## Render to the Screen
 ```ts
 // Just render list of items
+// Printable
 inv.ui()
 ```
 * You can also add some options to do with your items
 ```ts
+// Printable
 inv.ui()
 	.option("⚙️Use", i => i.remove(1));
 	.option("😋Eat", i => i.remove(1));
@@ -87,6 +89,7 @@ inv.ui()
 ```
 * You can filter what to show by adding `tag`
 ```ts
+// Printable
 inv.ui()
 	.tag("food") // Only 'food' items will be visible
 	.option("⚙️Use", i => i.remove(1));
