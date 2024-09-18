@@ -8,9 +8,9 @@ const defineItem = haxidenti.inventory.defineItem;
 
 export const R_FLOWER = defineItem(1, "🌹Red flower", ["flower"]);
 export const Y_FLOWER = defineItem(2, "🌻Yellow flower", ["flower"]);
-export const FOOD     = define(3, "🍞Flower Food", ["food"]);
-export const STICK    = define(4, "🌿Stick", []);
-export const COIN     = define(5, "🪙Coin", ["money"]);
+export const FOOD     = defineItem(3, "🍞Flower Food", ["food"]);
+export const STICK    = defineItem(4, "🌿Stick", []);
+export const COIN     = defineItem(5, "🪙Coin", ["money"]);
 ```
 
 
